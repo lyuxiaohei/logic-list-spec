@@ -203,10 +203,11 @@ changes:
    - 登录拦截
    - 状态流转表
 
-### 阶段三：截图与输出
+### 阶段三：截图、渲染与输出
 
 7. **自动截图** — `scripts/screenshot.py` 为每个页面截图
-8. **合并输出** — 插入截图路径，输出完整文档
+8. **流程图渲染** — 将 mermaid 流程图渲染为 SVG（详见 `rules/flowchart-rules.md` 的渲染方案）
+9. **合并输出** — 插入截图路径和SVG引用，输出完整文档
 
 ---
 
@@ -269,7 +270,7 @@ changes:
 | 草案生成 | Draft模式Phase 2-3流程 | [rules/draft-generation.md](rules/draft-generation.md) |
 | 文档结构 | 标题层级、编号规则 | [rules/document-structure.md](rules/document-structure.md) |
 | 用例生成 | Extract模式从源码提取用例 | [rules/use-case-generation.md](rules/use-case-generation.md) |
-| 流程图规则 | mermaid flowchart规范 | [rules/flowchart-rules.md](rules/flowchart-rules.md) |
+| 流程图规则 | mermaid flowchart规范 + Mermaid→SVG渲染方案 | [rules/flowchart-rules.md](rules/flowchart-rules.md) |
 
 ### 参考资料
 

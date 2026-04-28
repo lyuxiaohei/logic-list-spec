@@ -165,6 +165,100 @@ flowchart TB
 
 ---
 
+## Mermaid → SVG 渲染方案
+
+业务逻辑清单中的 mermaid 流程图需渲染为 SVG 图片以支持文档预览，同时保留 mermaid 源码为 `<details>` 折叠备份。
+
+### 渲染优先级
+
+按以下顺序尝试渲染，任一成功即停止：
+
+| 优先级 | 方案 | 命令 | 适用条件 |
+|--------|------|------|----------|
+| 1 | **mermaid-cli (mmdc)** 本地渲染 | `mmdc -i input.mmd -o output.svg --theme default --backgroundColor white` | 本机已安装 mmdc |
+| 2 | **kroki.io** POST API | `curl -X POST -H "Content-Type: application/json" -d '{"diagram_source":"...","diagram_type":"flowchart","output_format":"svg"}' https://kroki.io/flowchart/svg` | 有网络，流程图 ≤ 100行 |
+| 3 | **mermaid.ink** GET API | `https://mermaid.ink/svg/base64_encoded_content` | 有网络，流程图 ≤ 80行且无中文 |
+| 4 | **留待后续生成** | 保存 `.mmd` 源文件，文档中引用空占位 | 所有方案失败 |
+
+### 方案详解
+
+#### 方案1：mmdc 本地渲染（推荐）
+
+```bash
+# 安装
+npm install -g @mermaid-js/mermaid-cli
+
+# 生成
+mmdc -i flowchart.mmd -o flowchart.svg --theme default --backgroundColor white
+```
+
+**优点**：无网络依赖、无行数限制、支持中文、渲染准确
+**缺点**：首次安装需下载 Chromium（~150MB）
+
+#### 方案2：kroki.io POST API
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d "{\"diagram_source\": \"$(cat flowchart.mmd | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')\", \"diagram_type\": \"flowchart\", \"output_format\": \"svg\"}" \
+  "https://kroki.io/flowchart/svg" \
+  -o flowchart.svg
+```
+
+**优点**：无需安装、支持中文
+**缺点**：依赖网络、复杂流程图（>100行）容易504超时
+
+#### 方案3：mermaid.ink GET API
+
+```bash
+# zlib压缩 + base64编码
+CONTENT=$(cat flowchart.mmd | python3 -c "
+import sys, zlib, base64
+data = sys.stdin.read().encode('utf-8')
+compressed = zlib.compress(data, 9)
+encoded = base64.urlsafe_b64encode(compressed).decode('ascii')
+print(encoded)
+")
+
+curl "https://mermaid.ink/svg/$CONTENT" -o flowchart.svg
+```
+
+**优点**：无需安装、GET请求简单
+**缺点**：中文内容容易导致500错误、URL长度限制约8000字符
+
+### 文档引用格式
+
+```markdown
+![流程图标题](flowchart_name.svg)
+
+<details>
+<summary>Mermaid 源码</summary>
+
+\```mermaid
+flowchart TB
+    ...
+\```
+
+</details>
+```
+
+### 源文件管理
+
+- 保存独立 `.mmd` 文件（如 `flowchart_order_payment.mmd`），与 SVG 同目录
+- 更新流程图内容后，重新执行渲染命令生成新 SVG
+- `.mmd` 文件纳入版本控制，便于后续重新渲染
+
+### 常见失败场景
+
+| 失败现象 | 原因 | 解决方案 |
+|----------|------|----------|
+| kroki.io 返回 504 | 流程图过大（>100行），服务端超时 | 改用 mmdc 本地渲染 |
+| mermaid.ink 返回 500 | URL中的中文字符编码问题 | 改用 kroki.io 或 mmdc |
+| mmdc 报 MODULE_NOT_FOUND | Node版本升级后全局包路径变化 | 重新 `npm install -g @mermaid-js/mermaid-cli` |
+| mmdc 报 puppeteer 错误 | Chromium 下载失败（ECONNRESET） | 重试安装或检查网络代理 |
+
+---
+
 ## 常见错误
 
 | 错误 | 正确做法 |
@@ -174,3 +268,4 @@ flowchart TB
 | 所有节点同色 | 成功/失败使用约定颜色 |
 | 分支不完整 | 覆盖所有判断分支 |
 | 虚线表示主流程 | 虚线仅用于可选/异常流程 |
+| 仅用在线服务渲染 | 优先使用 mmdc 本地渲染，在线服务作为备选 |
