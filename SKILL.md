@@ -4,14 +4,12 @@ description: "业务逻辑清单生成技能。支持双模式：Draft模式从�
 risk: low
 source: project
 date_added: "2026-04-21"
-version: "2.0"
-changes:
-  - V2.0: 新增Draft模式，深度融合idea-refine方法论；模板支持草案版与正式版；新增状态标记体系
-  - V1.1: 新增登录拦截章节、状态流转表、截图脚本
-  - V1.0: Extract模式基础功能
+version: "0.21"
 ---
 
-# 业务逻辑清单生成技能 V2.0
+# 业务逻辑清单生成技能 V0.21
+
+> 版本管理见 [VERSIONING.md](VERSIONING.md)
 
 双模式支持：**Draft模式**（需求正向生成草案）+ **Extract模式**（源码逆向提取）。
 
@@ -35,148 +33,27 @@ changes:
 
 ---
 
-## 一、Draft模式流程（深度融合idea-refine）
+## 一、Draft模式流程
 
-适用于无原型HTML的首次设计场景。
-
-### 阶段一：需求收集（Understand & Expand）
-
-参考 `rules/requirement-collection.md`，深度融合 idea-refine Phase 1 方法：
-
-#### 1.1 问题重述（How Might We）
-
-将用户的原始需求重述为 HMW 问题陈述：
+适用于无原型HTML的首次设计场景，深度融合 idea-refine 方法论。
 
 ```
-"How might we {问题描述}？"
+需求输入 → 需求收集 → 页面收敛 → 输出草案 → 用户确认
 ```
 
-**要点：**
-- 双端视角（小程序端 + 后台端）
-- 核心动词（发起、审核、处理、闭环）
-- 价值目标（便捷、高效、完整）
+| 阶段 | 目标 | 详细规则 |
+|------|------|---------|
+| 一、需求收集 | HMW重述 → 澄清问题 → 变体生成 → 上下文扫描 | [rules/requirement-collection.md](rules/requirement-collection.md) |
+| 二、页面收敛 | 聚类页面 → 压力测试 → 显性假设 → Not Doing | [rules/draft-generation.md](rules/draft-generation.md) |
+| 三、输出草案 | 功能大纲→用例表 → 数据需求→字段表 → 规则→增强表 | [rules/draft-generation.md](rules/draft-generation.md) |
 
-#### 1.2 澄清问题（Sharpening Questions）
-
-使用 `AskUserQuestion` 工具，限制5个问题：
-
-| # | 问题 | 目的 |
-|---|------|------|
-| 1 | 用户是谁？ | 明确用户画像 |
-| 2 | 成功标准是什么？ | 定义验收指标 |
-| 3 | 技术约束是什么？ | 识别现有架构限制 |
-| 4 | 尝试过什么？ | 了解现有能力 |
-| 5 | 为什么现在做？ | 理解业务驱动 |
-
-**不进入下一阶段，直到：用户画像 + 成功标准已明确**
-
-#### 1.3 变体生成（Idea Variations）
-
-复用 idea-refine 的7种视角，聚焦页面/功能维度：
-
-| 视角 | 应用示例 |
-|------|----------|
-| Inversion | 用户端申请 vs 商家端主动退款 |
-| Constraint removal | 无审核流程 vs 三级审批 |
-| Audience shift | 用户自助 vs 客服代操作 |
-| Combination | 售后+投诉+评价联动 |
-| Simplification | 仅退款 vs 退换货一体化 |
-| 10x version | AI自动化审核 |
-| Expert lens | 售后专家如何设计状态机 |
-
-**生成规则：不超过8个变体，每个变体有明确理由**
-
-#### 1.4 上下文扫描（Codebase-Aware）
-
-使用 `Glob`、`Grep`、`Read` 扫描现有代码库：
-
-| 扫描维度 | 识别内容 |
-|----------|----------|
-| 现有相关页面 | 可参考的结构 |
-| 状态流转定义 | 可复用的状态机 |
-| 表单/弹窗组件 | 可复用的UI组件 |
-| 后台审批模式 | 可复用的流程 |
-
-**输出：可复用组件表 + 现有约束表**
-
----
-
-### 阶段二：页面收敛（Evaluate & Converge）
-
-参考 `rules/draft-generation.md`，深度融合 idea-refine Phase 2 方法：
-
-#### 2.1 聚类页面结构（Cluster → Pages）
-
-将共鸣的功能变体聚类为页面组：
-
-**输出：**
-- 小程序端页面列表
-- 后台端页面列表
+**关键约束：**
+- 不进入阶段二，直到用户画像 + 成功标准已明确
+- 每页至少 2 条假设，标注 `[必验]`/`[风险]`/`[暂略]`
+- Not Doing 清单项 ≥ Doing 项的 50%
 - 总页面数 ≤ 10
 
-#### 2.2 压力测试（Stress-test）
-
-每个页面评估三维度：
-
-| 维度 | 评估问题 |
-|------|----------|
-| User Value | Painkiller or Vitamin？ |
-| Feasibility | Low/Medium/High，可复用组件？ |
-| Differentiation | 与现状差异？ |
-
-**诚实评估原则：Vitamin功能明确标注，可行性Low建议排除**
-
-#### 2.3 显性假设（Surface Assumptions）
-
-每个页面标注三类假设：
-
-| 假设类型 | 标记 | 含义 |
-|----------|------|------|
-| Must Be True | `[必验]` | 验证失败则流程不可行 |
-| Could Kill | `[风险]` | 可能失败，需关注 |
-| Ignoring | `[暂略]` | 当前版本有意排除 |
-
-**每页至少2条假设，标注验证方式**
-
-#### 2.4 Not Doing清单
-
-明确排除的功能，排除项 ≥ Doing项的50%
-
-| 排除项 | 排除理由 | 可能何时加入 |
-|--------|----------|--------------|
-
----
-
-### 阶段三：输出草案（Sharpen & Ship）
-
-参考 `rules/draft-generation.md`，转换为清单模板：
-
-#### 3.1 功能大纲 → 功能用例表
-
-| 功能大纲项 | 映射到 |
-|------------|--------|
-| 用户动作 | 操作列 |
-| 设计意图 | 预期结果列，标注 `[草案]` |
-
-#### 3.2 数据需求 → 关键字段数据来源
-
-| 数据需求 | 映射到 |
-|----------|--------|
-| 用户操作 | 直接填写 |
-| 外部来源 | 标注 `[待确认]` |
-
-#### 3.3 待确认规则 → 业务逻辑增强表
-
-| 规则问题 | 映射到 |
-|----------|--------|
-| 假设清单 | 标注 `[必验]`/`[风险]` |
-| 业务规则 | 标注 `[待确认]` |
-
-#### 3.4 输出文件
-
-- 路径：`doc/V{版本}/业务逻辑清单_V{版本}-草案.md`
-- 截图：无（页面标注 `[待原型]`）
-- 状态：用户确认后进入原型阶段
+**输出：** `doc/V{版本}/业务逻辑清单_V{版本}-草案.md`，无截图，页面标注 `[待原型]`
 
 ---
 
@@ -287,17 +164,7 @@ changes:
 
 ---
 
-## 六、核心哲学（继承idea-refine）
-
-1. **Simplicity is the ultimate sophistication** — 推向最简单的页面结构
-2. **Start with the user experience, work backwards** — 先设计用户体验，再推导后台功能
-3. **Say no to 1,000 things** — Not Doing清单是聚焦的核心
-4. **Challenge every assumption** — 每条假设都需标注验证方式
-5. **The parts you can't see should be as beautiful** — 后台流程设计需同样精细
-
----
-
-## 七、Anti-patterns（反模式）
+## 六、Anti-patterns（反模式）
 
 | 反模式 | 正确做法 |
 |--------|----------|
@@ -310,7 +177,7 @@ changes:
 
 ---
 
-## 八、验证清单
+## 七、验证清单
 
 **Draft模式验证：**
 
