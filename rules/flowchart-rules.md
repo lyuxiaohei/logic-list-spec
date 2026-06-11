@@ -1,4 +1,4 @@
-# 流程图规则 V0.52
+# 流程图规则 V0.53
 
 ## 基本原则
 
@@ -52,7 +52,144 @@
 - 决策菱形 ≤3 个出口，超过则拆分为嵌套菱形
 - 所有分支必须标注标签
 
+---
+
+#### diagram-design 调度：状态机图（diagram type: state）
+
+**适用条件：** 模式五（状态机图），实体有 ≥ 3 个状态时调用。
+
+| 参数 | 值 |
+|------|-----|
+| diagram type | state |
+| 输入 | 状态机法输出的状态列表 + 跳转路径 + 触发条件，按 `references/type-state.md` 规范转换 |
+| 输出路径 | `doc/V{版本}/diagrams/{实体名}_state.html` |
+
+**节点映射：**
+
+| 本规则状态机元素 | diagram-design 元素 | 说明 |
+|-------------------|---------------------|------|
+| 初始状态 `[*]` | Small filled dot (`r=6`) | 状态机入口 |
+| 状态节点 `待支付` | Rounded rectangle (`rx=12`) | 中间状态 |
+| 终态 `[*]` | Double circle or filled dot with ring | 状态机出口 |
+| 转移 `支付成功` | Curved arrow with label | `event [guard] / action` |
+| 超时转移 | Dashed arrow | 虚线表示自动触发 |
+
+**样式要点：**
+- 状态节点使用统一的圆角矩形，不区分颜色
+- 转移标签格式：`事件 [守卫条件]`（如 `支付成功 [库存充足]`）
+- 超时/自动触发用虚线箭头区分
+- 正向路径（happy path）箭头加粗
+
 **文档引用格式：**
+
+```markdown
+![{实体名}状态机](diagrams/{实体名}_state.html)
+
+<details>
+<summary>Mermaid 源码（备选）</summary>
+
+```mermaid
+stateDiagram-v2
+    ...
+```
+
+</details>
+```
+
+---
+
+#### diagram-design 调度：时序图（diagram type: sequence）
+
+**适用条件：** 模式六（系统时序图）和模式四（泳道角色图方式一），涉及跨系统交互时调用。
+
+| 参数 | 值 |
+|------|-----|
+| diagram type | sequence |
+| 输入 | 系统交互时序表或泳道角色图，按 `references/type-sequence.md` 规范转换 |
+| 输出路径 | `doc/V{版本}/diagrams/{操作名}_seq.html` |
+
+**节点映射：**
+
+| 本规则时序元素 | diagram-design 元素 | 说明 |
+|-------------------|---------------------|------|
+| 参与者 `用户` | Actor box | 交互角色/系统 |
+| 生命线 | Dashed vertical line | 参与者存活周期 |
+| 同步消息 `→` | Solid arrow with label | 请求/调用 |
+| 返回消息 `-->>` | Dashed arrow with label | 响应/返回 |
+| 自关联消息 | Loop-back arrow | 自身调用 |
+| alt 块（异常） | Rectangular frame with label | 条件分支区域 |
+| Note 标注 | Note box | 补充说明 |
+
+**样式要点：**
+- 同步消息用实线箭头，异步消息用虚线箭头
+- alt 块（异常分支）用浅色背景区分
+- 关键策略标注（重试、超时）用 Note 补充
+- 参与者从左到右按调用链排列
+
+**文档引用格式：**
+
+```markdown
+![{操作名}时序图](diagrams/{操作名}_seq.html)
+
+<details>
+<summary>Mermaid 源码（备选）</summary>
+
+```mermaid
+sequenceDiagram
+    ...
+```
+
+</details>
+```
+
+---
+
+#### diagram-design 调度：泳道图（diagram type: swimlane）
+
+**适用条件：** 模式四（泳道角色图方式二），多角色协作流程时调用。当角色交互以消息传递为主时优先使用 sequence 类型，以流程步骤为主时使用 swimlane 类型。
+
+| 参数 | 值 |
+|------|-----|
+| diagram type | swimlane |
+| 输入 | 角色泳道图矩阵表，按 `references/type-swimlane.md` 规范转换 |
+| 输出路径 | `doc/V{版本}/diagrams/{流程名}_swimlane.html` |
+
+**节点映射：**
+
+| 本规则泳道元素 | diagram-design 元素 | 说明 |
+|-------------------|---------------------|------|
+| 角色行（用户/前端/后端） | Horizontal lane with label | 泳道行 |
+| 流程步骤 | Rounded rectangle in lane | 具体操作 |
+| 跨泳道转移 | Arrow crossing lane boundary | 数据/控制传递 |
+| 判断节点 | Diamond in lane | 条件分支 |
+| 起止节点 | Oval in lane | 开始/结束 |
+
+**样式要点：**
+- 泳道标签使用中文简短名
+- 跨泳道箭头标注传递的数据/信息
+- 同步操作用实线，异步操作用虚线
+- 异常路径用浅色箭头
+
+**文档引用格式：**
+
+```markdown
+![{流程名}泳道图](diagrams/{流程名}_swimlane.html)
+
+<details>
+<summary>Mermaid 源码（备选）</summary>
+
+```mermaid
+flowchart LR
+    subgraph 用户
+        ...
+    end
+    ...
+```
+
+</details>
+```
+
+---
 
 ```markdown
 ![流程图标题](diagrams/{页面名}_flow.html)
@@ -242,6 +379,126 @@ flowchart TD
     D --> F[空状态引导操作]
 ```
 
+### 模式四：泳道角色图
+
+适用于多角色协作流程，展示角色间的交互关系。使用 `sequenceDiagram` 或 `flowchart LR` + `subgraph`。
+
+**方式一：sequenceDiagram（推荐）**
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant FE as 前端
+    participant BE as 后端服务
+    participant DB as 数据库
+
+    U->>FE: 点击加入购物车
+    FE->>BE: POST /api/cart/add
+    BE->>DB: INSERT cart_item
+    DB-->>BE: 返回成功
+    BE-->>FE: {success: true}
+    FE->>U: Toast 已加入购物车
+    Note over FE: 更新购物车角标数量
+
+    alt 库存不足
+        BE-->>FE: {error: "STOCK_INSUFFICIENT"}
+        FE->>U: Toast 库存不足
+    end
+```
+
+**方式二：flowchart LR + subgraph（备选）**
+
+```mermaid
+flowchart LR
+    subgraph 用户
+        A1[浏览商品]
+        A2[点击加购]
+    end
+    subgraph 前端
+        B1[请求商品API]
+        B2[调用加购API]
+    end
+    subgraph 后端服务
+        C1[查询商品]
+        C2[校验库存]
+        C3[写入购物车]
+    end
+    A1 --> B1 --> C1
+    A2 --> B2 --> C2 --> C3
+```
+
+**命名规范：**
+- participant 使用简短中文：用户、前端、后端服务、数据库、第三方服务
+- 消息文本使用动词开头
+- `alt` 块用于异常分支
+
+### 模式五：状态机图
+
+适用于有状态流转的实体（订单、审批、工单等），使用 `stateDiagram-v2`。
+
+```mermaid
+stateDiagram-v2
+    [*] --> 待支付 : 创建订单
+
+    待支付 --> 已支付 : 支付成功
+    待支付 --> 已取消 : 超时30min 或 用户取消
+
+    已支付 --> 已发货 : 商家发货
+    已发货 --> 已完成 : 确认收货
+    已发货 --> 退货中 : 申请退货
+
+    退货中 --> 已退款 : 退货完成
+    已退款 --> [*]
+
+    已取消 --> [*]
+    已完成 --> [*]
+
+    note right of 待支付 : 库存预扣 30min
+    note right of 已发货 : 7天自动确认收货
+```
+
+**命名规范：**
+- 状态名使用简短中文：待支付、已支付、已发货、已完成、已取消
+- 转移标签描述触发条件
+- `[*]` 标记初始状态和终态
+- `note` 标注关键约束（超时时间、自动触发规则）
+
+### 模式六：系统时序图
+
+适用于跨系统的请求链路，展示同步/异步和失败策略。使用 `sequenceDiagram`。
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant GW as API网关
+    participant OS as 订单服务
+    participant DB as 数据库
+    participant MQ as 消息队列
+    participant NS as 通知服务
+
+    U->>GW: 提交订单 同步
+    GW->>OS: 创建订单
+    OS->>DB: 写入订单 + 扣减库存
+    DB-->>OS: 成功
+    OS->>MQ: 发布订单创建事件 异步
+    OS-->>GW: 返回订单号
+    GW-->>U: 跳转支付页
+
+    MQ-->>NS: 消费事件
+    NS->>U: 推送订单确认通知
+
+    alt 下单失败
+        OS-->>GW: 返回错误码
+        GW-->>U: Toast 下单失败请重试
+    Note over OS: 事务回滚 释放库存预扣
+    end
+```
+
+**标注规范：**
+- 消息标签后标注 `同步` 或 `异步`
+- `alt` 块展示失败路径和补偿机制
+- `Note` 标注关键策略（事务回滚、重试次数、超时时间）
+
 ---
 
 ## 文字补充规则
@@ -309,3 +566,7 @@ Mermaid 解析器会将以下字符视为语法标记，**在节点标签和连�
 | 流程图后逐句翻译流程图 | 只补充阈值、时序、动画等细节 |
 | diagram-design 可用却使用 Mermaid | 优先使用 diagram-design，Mermaid 仅作备选 |
 | diagram-design 生成后不保留 Mermaid 源码 | 必须在 `<details>` 中保留 Mermaid 备份 |
+| 状态机图遗漏终态 `[*]` | 每个终态必须标注 `→ [*]` |
+| 时序图不标注同步/异步 | 每条消息必须标注 |
+| 泳道图遗漏异常分支 | 必须用 `alt` 块覆盖失败路径 |
+| 状态机图遗漏超时处理 | 每个等待状态都应有超时转移 |
