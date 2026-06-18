@@ -6,7 +6,7 @@
 
 ## 当前版本
 
-**V0.21**
+**V0.22**
 
 ---
 
@@ -14,6 +14,7 @@
 
 | 版本 | 日期 | 变更说明 | 变更文件 |
 |------|------|---------|---------|
+| V0.22 | 2026-06-15 | 截图改为可选（默认关闭）：用户不主动要求则不生成/不引用截图；阶段三改名「渲染与输出」；新增 `--screenshot` 输入参数 | SKILL.md, templates/page-section.md, templates/doc-skeleton.md, rules/document-structure.md, 技能链协作指南.md |
 | V0.21 | 2026-05-21 | 集成 diagram-design 辅助技能，流程图优先使用 diagram-design，Mermaid 作为备选 | SKILL.md, rules/flowchart-rules.md V0.51→V0.52, 技能链协作指南.md V0.2→V0.21 |
 | V0.2 | 2026-04-24 | 新增 Draft 模式，深度融合 idea-refine 方法论；模板支持草案版与正式版；新增状态标记体系 | SKILL.md, 新增 rules/draft-generation.md, templates/doc-skeleton.md 重写 |
 | V0.11 | 2026-04-22 | 新增登录拦截章节、状态流转表、截图脚本 | SKILL.md, rules/, scripts/screenshot.py |
